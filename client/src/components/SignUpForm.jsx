@@ -19,28 +19,28 @@ const SignUpForm = () => {
         placeholder="Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full px-6 py-3 bg-zinc-800 text-white rounded-full border border-zinc-700 focus:outline-none focus:border-yellow-400 transition-colors"
+        className="w-full px-6 py-3 bg-black/20 backdrop-blur-xl text-white rounded-full border border-zinc-700/30 focus:outline-none focus:border-yellow-400 transition-colors"
       />
       <input
         type="email"
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="w-full px-6 py-3 bg-zinc-800 text-white rounded-full border border-zinc-700 focus:outline-none focus:border-yellow-400 transition-colors"
+        className="w-full px-6 py-3 bg-black/20 backdrop-blur-xl text-white rounded-full border border-zinc-700/30 focus:outline-none focus:border-yellow-400 transition-colors"
       />
       <input
         type="password"
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="w-full px-6 py-3 bg-zinc-800 text-white rounded-full border border-zinc-700 focus:outline-none focus:border-yellow-400 transition-colors"
+        className="w-full px-6 py-3 bg-black/20 backdrop-blur-xl text-white rounded-full border border-zinc-700/30 focus:outline-none focus:border-yellow-400 transition-colors"
       />
       <input
         type="number"
         placeholder="Age"
         value={age}
         onChange={(e) => setAge(e.target.value)}
-        className="w-full px-6 py-3 bg-zinc-800 text-white rounded-full border border-zinc-700 focus:outline-none focus:border-yellow-400 transition-colors"
+        className="w-full px-6 py-3 bg-black/20 backdrop-blur-xl text-white rounded-full border border-zinc-700/30 focus:outline-none focus:border-yellow-400 transition-colors"
       />
       
       {/* Gender Selection */}
@@ -52,7 +52,7 @@ const SignUpForm = () => {
             className={`w-full py-3 rounded-full transition-colors duration-200 ${
               gender === option 
                 ? "bg-yellow-400 text-black" 
-                : "bg-zinc-800 text-gray-400 border border-zinc-700"
+                : "bg-black/20 backdrop-blur-xl text-gray-300 border border-zinc-700/30"
             }`}
           >
             {option.charAt(0).toUpperCase() + option.slice(1)}
@@ -69,7 +69,7 @@ const SignUpForm = () => {
             className={`w-full py-3 rounded-full transition-colors duration-200 ${
               genderPreference === option 
                 ? "bg-yellow-400 text-black" 
-                : "bg-zinc-800 text-gray-400 border border-zinc-700"
+                : "bg-black/20 backdrop-blur-xl text-gray-300 border border-zinc-700/30"
             }`}
           >
             {option.charAt(0).toUpperCase() + option.slice(1)}
