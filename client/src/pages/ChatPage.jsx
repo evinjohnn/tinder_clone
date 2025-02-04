@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useMatchStore } from "../store/useMatchStore";
 import { useMessageStore } from "../store/useMessageStore";
 import { Link, useParams } from "react-router-dom";
-import { Loader, UserX, Phone, VideoCamera, Info } from "lucide-react";
+import { Loader, UserX, Phone, Info } from "lucide-react";
 import MessageInput from "../components/MessageInput";
 
 const ChatPage = () => {
