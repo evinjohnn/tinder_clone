@@ -16,7 +16,7 @@ const Sidebar = () => {
         <>
             <div 
                 className={`
-                    fixed inset-y-0 left-0 z-20 w-80 bg-gradient-to-b from-white to-pink-50 
+                    fixed inset-y-0 left-0 z-20 w-80 bg-black 
                     shadow-2xl rounded-r-3xl overflow-hidden transition-transform duration-300 ease-in-out
                     ${isOpen ? "translate-x-0" : "-translate-x-full"}
                     lg:translate-x-0 lg:static lg:w-1/4
@@ -24,13 +24,13 @@ const Sidebar = () => {
             >
                 <div className='flex flex-col h-full'>
                     {/* Header */}
-                    <div className='p-6 pb-4 border-b border-pink-200 flex justify-between items-center'>
+                    <div className='p-6 pb-4 border-b border-yellow-400/20 flex justify-between items-center bg-black/50 backdrop-blur-lg'>
                         <div className="flex items-center space-x-3">
-                            <Heart size={32} className="text-pink-600" />
-                            <h2 className='text-2xl font-bold text-pink-600'>Matches</h2>
+                            <Heart size={32} className="text-yellow-400" />
+                            <h2 className='text-2xl font-bold text-yellow-400'>Matches</h2>
                         </div>
                         <button
-                            className='lg:hidden p-2 text-gray-500 hover:text-pink-600 focus:outline-none'
+                            className='lg:hidden p-2 text-gray-400 hover:text-yellow-400 focus:outline-none'
                             onClick={toggleSidebar}
                         >
                             <X size={24} />
@@ -47,23 +47,23 @@ const Sidebar = () => {
                                 <Link key={match._id} to={`/chat/${match._id}`}>
                                     <div className='
                                         flex items-center justify-between 
-                                        bg-white border border-pink-100 
-                                        hover:bg-pink-50 hover:shadow-md 
+                                        bg-gray-900/50 border border-yellow-400/10 
+                                        hover:bg-yellow-400/10 hover:border-yellow-400/30 
                                         p-3 rounded-xl 
                                         transition-all duration-300 
-                                        group
+                                        group backdrop-blur-lg
                                     '>
                                         <div className="flex items-center space-x-3">
                                             <img
                                                 src={match.image || "/avatar.png"}
                                                 alt='User avatar'
-                                                className='size-12 object-cover rounded-full border-2 border-pink-300'
+                                                className='size-12 object-cover rounded-full border-2 border-yellow-400/50'
                                             />
-                                            <h3 className='font-semibold text-gray-800 group-hover:text-pink-600'>{match.name}</h3>
+                                            <h3 className='font-semibold text-gray-100 group-hover:text-yellow-400'>{match.name}</h3>
                                         </div>
                                         <ChevronRight 
                                             size={20} 
-                                            className="text-pink-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity"
                                         />
                                     </div>
                                 </Link>
@@ -75,8 +75,8 @@ const Sidebar = () => {
             <button
                 className='
                     lg:hidden fixed top-4 left-4 
-                    p-3 bg-gradient-to-r from-pink-500 to-pink-600 
-                    text-white rounded-full shadow-lg z-10 
+                    p-3 bg-gradient-to-r from-yellow-400 to-yellow-500 
+                    text-black rounded-full shadow-lg z-10 
                     hover:scale-110 transition-all
                 '
                 onClick={toggleSidebar}
@@ -90,11 +90,11 @@ const Sidebar = () => {
 export default Sidebar;
 
 const NoMatchesFound = () => (
-    <div className='flex flex-col items-center justify-center h-full text-center space-y-4 p-6 bg-pink-50 rounded-2xl'>
-        <Heart className='text-pink-400 animate-pulse' size={64} />
+    <div className='flex flex-col items-center justify-center h-full text-center space-y-4 p-6 bg-gray-900/50 rounded-2xl border border-yellow-400/10'>
+        <Heart className='text-yellow-400 animate-pulse' size={64} />
         <div>
-            <h3 className='text-xl font-bold text-gray-700 mb-2'>No Matches Yet</h3>
-            <p className='text-gray-500 max-w-xs'>
+            <h3 className='text-xl font-bold text-gray-100 mb-2'>No Matches Yet</h3>
+            <p className='text-gray-400 max-w-xs'>
                 Don&apos;t worry! Your perfect match is just around the corner. Keep swiping!
             </p>
         </div>
@@ -102,11 +102,11 @@ const NoMatchesFound = () => (
 );
 
 const LoadingState = () => (
-    <div className='flex flex-col items-center justify-center h-full text-center space-y-4 p-6 bg-pink-50 rounded-2xl'>
-        <Loader className='text-pink-500 mb-4 animate-spin' size={64} />
+    <div className='flex flex-col items-center justify-center h-full text-center space-y-4 p-6 bg-gray-900/50 rounded-2xl border border-yellow-400/10'>
+        <Loader className='text-yellow-400 mb-4 animate-spin' size={64} />
         <div>
-            <h3 className='text-xl font-bold text-gray-700 mb-2'>Loading Matches</h3>
-            <p className='text-gray-500 max-w-xs'>
+            <h3 className='text-xl font-bold text-gray-100 mb-2'>Loading Matches</h3>
+            <p className='text-gray-400 max-w-xs'>
                 We&apos;re finding your perfect matches. This might take a moment...
             </p>
         </div>
