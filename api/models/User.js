@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import validator from "validator";
 
 const userSchema = new mongoose.Schema(
 	{
@@ -11,6 +12,10 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 			unique: true,
+			validate: {
+				validator: (value) => validator.isEmail(value),
+				message: "Invalid email format"
+			}
 		},
 		password: {
 			type: String,

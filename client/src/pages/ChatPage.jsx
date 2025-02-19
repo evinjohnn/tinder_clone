@@ -1,30 +1,46 @@
 import { useEffect } from "react";
 import { Header } from "../components/Header";
 import { useAuthStore } from "../store/useAuthStore";
-import { useMatchStore } from "../store/useMatchStore";
-import { useMessageStore } from "../store/useMessageStore";
+import { useMatchStore, useMessageStore } from "../store";
 import { Link, useParams } from "react-router-dom";
 import { Loader, UserX, Phone, Info } from "lucide-react";
 import MessageInput from "../components/MessageInput";
+import { getSocket } from "../socket/socket.client";
 
 const ChatPage = () => {
-  const { getMyMatches, matches, isLoadingMyMatches } = useMatchStore();
-  const { messages, getMessages, subscribeToMessages, unsubscribeFromMessages } = useMessageStore();
-  const { authUser } = useAuthStore();
   const { id } = useParams();
-  const match = matches.find((m) => m?._id === id);
+  const { match, getMyMatches, isLoadingMyMatches } = useMatchStore((state) => ({
+    match: state.matches.find((m) => m._id === id),
+    getMyMatches: state.getMyMatches,
+    isLoadingMyMatches: state.isLoadingMyMatches,
+  }));
+
+  const { messages, getMessages, subscribeToMessages, unsubscribeFromMessages } = useMessageStore(
+    (state) => ({
+      messages: state.messages,
+      getMessages: state.getMessages,
+      subscribeToMessages: state.subscribeToMessages,
+      unsubscribeFromMessages: state.unsubscribeFromMessages,
+    })
+  );
+
+  const { authUser } = useAuthStore();
 
   useEffect(() => {
-    if (authUser && id) {
-      getMyMatches();
-      getMessages(id);
+    const socket = getSocket();
+    getMyMatches();
+    if (match) {
+      getMessages(match._id).catch((error) => {
+        console.error("Error fetching messages:", error);
+      });
       subscribeToMessages();
     }
 
     return () => {
       unsubscribeFromMessages();
+      socket.disconnect();
     };
-  }, [getMyMatches, authUser, getMessages, subscribeToMessages, unsubscribeFromMessages, id]);
+  }, [getMyMatches, match, getMessages, subscribeToMessages, unsubscribeFromMessages]);
 
   if (isLoadingMyMatches) return <LoadingMessagesUI />;
   if (!match) return <MatchNotFound />;

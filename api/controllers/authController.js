@@ -1,5 +1,7 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import validator from "validator";
+import bcrypt from "bcryptjs";
 
 const signToken = (id) => {
 	// jwt token
@@ -32,10 +34,15 @@ export const signup = async (req, res) => {
 			});
 		}
 
+		if (!validator.isEmail(email)) {
+			return res.status(400).json({ success: false, message: "Invalid email format" });
+		}
+
+		const hashedPassword = await bcrypt.hash(password, 10);
 		const newUser = await User.create({
 			name,
 			email,
-			password,
+			password: hashedPassword,
 			age,
 			gender,
 			genderPreference,
@@ -59,6 +66,7 @@ export const signup = async (req, res) => {
 		res.status(500).json({ success: false, message: "Server error" });
 	}
 };
+
 export const login = async (req, res) => {
 	const { email, password } = req.body;
 	try {
@@ -71,7 +79,7 @@ export const login = async (req, res) => {
 
 		const user = await User.findOne({ email }).select("+password");
 
-		if (!user || !(await user.matchPassword(password))) {
+		if (!user || !(await bcrypt.compare(password, user.password))) {
 			return res.status(401).json({
 				success: false,
 				message: "Invalid email or password",
@@ -96,6 +104,7 @@ export const login = async (req, res) => {
 		res.status(500).json({ success: false, message: "Server error" });
 	}
 };
+
 export const logout = async (req, res) => {
 	res.clearCookie("jwt");
 	res.status(200).json({ success: true, message: "Logged out successfully" });
