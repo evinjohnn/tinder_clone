@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import Sidebar from "../components/Sidebar";
-import Header from "../components/Header";
+import { Header } from "../components/Header";
 import { useMatchStore } from "../store/useMatchStore";
 import { Frown, Loader2, Sparkles } from "lucide-react";
 import SwipeArea from "../components/SwipeArea";
@@ -49,7 +49,7 @@ const HomePage = () => {
           <main className="flex-grow flex flex-col justify-center items-center p-4 relative">
             {userProfiles.length > 0 && !isLoadingUserProfiles && (
               <div className="relative">
-                <SwipeArea profiles={userProfiles} />
+                <SwipeArea />
                 <SwipeFeedback />
                 
                 {/* Decorative elements */}

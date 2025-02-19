@@ -1,7 +1,9 @@
 import { useEffect } from "react";
-import { Header } from "../components/Header";
+// ChatPage.jsx
 import { useAuthStore } from "../store/useAuthStore";
-import { useMatchStore, useMessageStore } from "../store";
+
+import { Header } from "../components/Header";;
+import { useMatchStore } from "../store";
 import { Link, useParams } from "react-router-dom";
 import { Loader, UserX, Phone, Info } from "lucide-react";
 import MessageInput from "../components/MessageInput";
