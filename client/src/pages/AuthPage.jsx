@@ -1,7 +1,9 @@
+// client/src/pages/AuthPage.jsx
 import { useState } from "react";
 import backgroundImage from '../images/img2.jpg';
 import LoginForm from "../components/LoginForm";
 import SignUpForm from "../components/SignUpForm";
+import logo from '../images/logo.png'; // NEW: Import the logo
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -27,7 +29,12 @@ const AuthPage = () => {
 
       <div className="w-full max-w-md relative z-20 px-4">
         <div className="mb-6 text-center">
-          <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 shadow-lg shadow-yellow-400/20" />
+          {/* UPDATED: Replaced the yellow box with your logo */}
+          <img 
+            src={logo} 
+            alt="DateX Logo" 
+            className="w-16 h-16 mx-auto mb-4 drop-shadow-[0_5px_5px_rgba(250,204,21,0.25)]" 
+          />
           <h2 className="text-2xl font-bold text-white">
             {isLogin ? "Welcome back" : "Create account"}
           </h2>

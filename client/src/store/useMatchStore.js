@@ -1,73 +1,86 @@
+// client/src/store/useMatchStore.js
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { getSocket } from "../socket/socket.client";
 
-export const useMatchStore = create((set) => ({
+export const useMatchStore = create((set, get) => ({
 	matches: [],
+	incomingLikes: [],
 	isLoadingMyMatches: false,
 	isLoadingUserProfiles: false,
+    isLoadingIncomingLikes: false,
 	userProfiles: [],
-	swipeFeedback: null,
-
+	
 	getMyMatches: async () => {
-		try {
-			set({ isLoadingMyMatches: true });
-			const res = await axiosInstance.get("/matches");
-			set({ matches: res.data.matches });
-		} catch (error) {
-			set({ matches: [] });
-			toast.error(error.response.data.message || "Something went wrong");
-		} finally {
-			set({ isLoadingMyMatches: false });
-		}
-	},
+        try {
+            set({ isLoadingMyMatches: true });
+            const res = await axiosInstance.get("/matches");
+            set({ matches: res.data.matches });
+        } catch (error) {
+            set({ matches: [] });
+        } finally {
+            set({ isLoadingMyMatches: false });
+        }
+    },
 
 	getUserProfiles: async () => {
-		try {
-			set({ isLoadingUserProfiles: true });
-			const res = await axiosInstance.get("/matches/user-profiles");
-			set({ userProfiles: res.data.users });
-		} catch (error) {
-			set({ userProfiles: [] });
-			toast.error(error.response.data.message || "Something went wrong");
-		} finally {
-			set({ isLoadingUserProfiles: false });
-		}
-	},
+        try {
+            set({ isLoadingUserProfiles: true });
+            const res = await axiosInstance.get("/matches/user-profiles");
+            set({ userProfiles: res.data.users });
+        } catch (error) {
+            set({ userProfiles: [] });
+        } finally {
+            set({ isLoadingUserProfiles: false });
+        }
+    },
 
-	swipeLeft: async (user) => {
-		try {
-			set({ swipeFeedback: "passed" });
-			await axiosInstance.post("/matches/swipe-left/" + user._id);
-		} catch (error) {
-			console.log(error);
-			toast.error("Failed to swipe left");
-		} finally {
-			setTimeout(() => set({ swipeFeedback: null }), 1500);
-		}
-	},
-	swipeRight: async (user) => {
-		try {
-			set({ swipeFeedback: "liked" });
-			await axiosInstance.post("/matches/swipe-right/" + user._id);
-		} catch (error) {
-			console.log(error);
-			toast.error("Failed to swipe right");
-		} finally {
-			setTimeout(() => set({ swipeFeedback: null }), 1500);
-		}
-	},
+    // NEW: Get incoming likes for the "Likes You" tab
+    getIncomingLikes: async () => {
+        try {
+            set({ isLoadingIncomingLikes: true });
+            const res = await axiosInstance.get('/matches/likes/incoming');
+            set({ incomingLikes: res.data.likes });
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to get likes');
+        } finally {
+            set({ isLoadingIncomingLikes: false });
+        }
+    },
+
+    // NEW: Replaces swipeRight
+	sendLike: async (user, likedContent, comment) => {
+        try {
+            // Immediately remove profile from the discover feed
+            set((state) => ({
+				userProfiles: state.userProfiles.filter((p) => p._id !== user._id),
+			}));
+
+            const res = await axiosInstance.post(`/matches/like/${user._id}`, { likedContent, comment });
+            
+            if (res.data.matched) {
+                toast.success(`It's a match with ${user.name}!`);
+                // Add to matches list
+                set((state) => ({ matches: [...state.matches, user] }));
+            } else {
+                toast.success('Like sent!');
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to send like');
+            // Optional: put user back in the feed if like fails
+            set((state) => ({ userProfiles: [user, ...state.userProfiles] }));
+        }
+    },
 
 	subscribeToNewMatches: () => {
 		try {
 			const socket = getSocket();
-
 			socket.on("newMatch", (newMatch) => {
 				set((state) => ({
 					matches: [...state.matches, newMatch],
 				}));
-				toast.success("You got a new match!");
+				toast.success(`You matched with ${newMatch.name}!`);
 			});
 		} catch (error) {
 			console.log(error);

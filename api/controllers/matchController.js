@@ -1,141 +1,147 @@
+// api/controllers/matchController.js
 import User from "../models/User.js";
+import Like from "../models/Like.js";
 import { getConnectedUsers, getIO } from "../socket/socket.server.js";
 
-export const swipeRight = async (req, res) => {
-	try {
-		const { likedUserId } = req.params;
-		const currentUser = await User.findById(req.user.id);
-		const likedUser = await User.findById(likedUserId);
+const getDiscoveryQuery = async (currentUser) => {
+    const sentLikes = await Like.find({ sender: currentUser._id }).select("receiver");
+    const likedUserIds = sentLikes.map(like => like.receiver);
 
-		if (!likedUser) {
-			return res.status(404).json({
-				success: false,
-				message: "User not found",
-			});
-		}
-
-		if (!currentUser.likes.includes(likedUserId)) {
-			currentUser.likes.push(likedUserId);
-			await currentUser.save();
-
-			// if the other user already liked us, it's a match, so let's update both users
-			if (likedUser.likes.includes(currentUser.id)) {
-				currentUser.matches.push(likedUserId);
-				likedUser.matches.push(currentUser.id);
-
-				await Promise.all([await currentUser.save(), await likedUser.save()]);
-
-				// send notification in real-time with socket.io
-				const connectedUsers = getConnectedUsers();
-				const io = getIO();
-
-				const likedUserSocketId = connectedUsers.get(likedUserId);
-
-				if (likedUserSocketId) {
-					io.to(likedUserSocketId).emit("newMatch", {
-						_id: currentUser._id,
-						name: currentUser.name,
-						image: currentUser.image,
-					});
-				}
-
-				const currentSocketId = connectedUsers.get(currentUser._id.toString());
-				if (currentSocketId) {
-					io.to(currentSocketId).emit("newMatch", {
-						_id: likedUser._id,
-						name: likedUser.name,
-						image: likedUser.image,
-					});
-				}
-			}
-		}
-
-		res.status(200).json({
-			success: true,
-			user: currentUser,
-		});
-	} catch (error) {
-		console.log("Error in swipeRight: ", error);
-
-		res.status(500).json({
-			success: false,
-			message: "Internal server error",
-		});
-	}
+    return {
+        $and: [
+            { _id: { $ne: currentUser.id } },
+            { _id: { $nin: currentUser.matches } },
+            { _id: { $nin: likedUserIds } },
+            {
+                gender:
+                    currentUser.genderPreference === "both"
+                        ? { $in: ["male", "female"] }
+                        : currentUser.genderPreference,
+            },
+            { genderPreference: { $in: [currentUser.gender, "both"] } },
+        ],
+    };
 };
 
-export const swipeLeft = async (req, res) => {
-	try {
-		const { dislikedUserId } = req.params;
-		const currentUser = await User.findById(req.user.id);
+export const getDiscoverFeed = async (req, res) => {
+    try {
+        const currentUser = await User.findById(req.user.id);
+        const query = await getDiscoveryQuery(currentUser);
 
-		if (!currentUser.dislikes.includes(dislikedUserId)) {
-			currentUser.dislikes.push(dislikedUserId);
-			await currentUser.save();
-		}
+        // Prioritize by reputation score
+        const users = await User.find(query).sort({ reputationScore: -1 }).limit(20);
 
-		res.status(200).json({
-			success: true,
-			user: currentUser,
-		});
-	} catch (error) {
-		console.log("Error in swipeLeft: ", error);
+        res.status(200).json({ success: true, users });
+    } catch (error) {
+        console.log("Error in getDiscoverFeed: ", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
 
-		res.status(500).json({
-			success: false,
-			message: "Internal server error",
-		});
-	}
+export const getStandoutsFeed = async (req, res) => {
+    try {
+        const currentUser = await User.findById(req.user.id);
+        const query = await getDiscoveryQuery(currentUser);
+
+        // Standouts are top-tier users, heavily weighted by reputation
+        const standouts = await User.find({
+            ...query,
+            reputationScore: { $gte: 85 }
+        }).sort({ reputationScore: -1, lastActive: -1 }).limit(10);
+        
+        res.status(200).json({ success: true, users: standouts });
+    } catch (error) {
+        console.log("Error in getStandoutsFeed: ", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+export const sendLike = async (req, res) => {
+    try {
+        const { receiverId } = req.params;
+        const { likedContent, comment, isRose } = req.body;
+        const sender = await User.findById(req.user.id);
+
+        if (isRose) {
+            if (sender.roses < 1) {
+                return res.status(400).json({ success: false, message: "Not enough roses." });
+            }
+            sender.roses -= 1;
+        }
+
+        const newLike = new Like({
+            sender: sender._id,
+            receiver: receiverId,
+            likedContent,
+            comment,
+            isRose
+        });
+        
+        await newLike.save();
+        await sender.save();
+
+        const mutualLike = await Like.findOne({ sender: receiverId, receiver: sender._id });
+
+        if (mutualLike) {
+            // It's a match logic...
+            const receiver = await User.findById(receiverId);
+
+            sender.matches.push(receiverId);
+            receiver.matches.push(sender._id);
+            await Promise.all([sender.save(), receiver.save()]);
+            await Like.updateMany(
+                { $or: [{ sender: sender._id, receiver: receiverId }, { sender: receiverId, receiver: sender._id }] },
+                { status: 'matched' }
+            );
+
+            // Real-time notification
+            const connectedUsers = getConnectedUsers();
+            const io = getIO();
+
+            const receiverSocketId = connectedUsers.get(receiverId.toString());
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit("newMatch", {
+                    _id: sender._id,
+                    name: sender.name,
+                    image: sender.images[0],
+                });
+            }
+            
+            return res.status(200).json({ success: true, matched: true, user: sender });
+        }
+
+        res.status(200).json({ success: true, matched: false, rosesLeft: sender.roses });
+    } catch (error) {
+        console.log("Error in sendLike: ", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// ... (getIncomingLikes and getMatches remain largely the same, but populate more data)
+export const getIncomingLikes = async (req, res) => {
+    try {
+        const likes = await Like.find({ receiver: req.user.id, status: 'pending' })
+            .populate('sender', 'name age images prompts reputationScore');
+        
+        res.status(200).json({ success: true, likes });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
 };
 
 export const getMatches = async (req, res) => {
 	try {
-		const user = await User.findById(req.user.id).populate("matches", "name image");
+		const user = await User.findById(req.user.id).populate("matches", "name images");
+        const matchesWithFirstImage = user.matches.map(match => ({
+            ...match.toObject(),
+            image: match.images && match.images.length > 0 ? match.images[0] : null
+        }));
 
 		res.status(200).json({
 			success: true,
-			matches: user.matches,
+			matches: matchesWithFirstImage,
 		});
 	} catch (error) {
-		console.log("Error in getMatches: ", error);
-
-		res.status(500).json({
-			success: false,
-			message: "Internal server error",
-		});
-	}
-};
-
-export const getUserProfiles = async (req, res) => {
-	try {
-		const currentUser = await User.findById(req.user.id);
-
-		const users = await User.find({
-			$and: [
-				{ _id: { $ne: currentUser.id } },
-				{ _id: { $nin: currentUser.likes } },
-				{ _id: { $nin: currentUser.dislikes } },
-				{ _id: { $nin: currentUser.matches } },
-				{
-					gender:
-						currentUser.genderPreference === "both"
-							? { $in: ["male", "female"] }
-							: currentUser.genderPreference,
-				},
-				{ genderPreference: { $in: [currentUser.gender, "both"] } },
-			],
-		});
-
-		res.status(200).json({
-			success: true,
-			users,
-		});
-	} catch (error) {
-		console.log("Error in getUserProfiles: ", error);
-
-		res.status(500).json({
-			success: false,
-			message: "Internal server error",
-		});
+		res.status(500).json({ success: false, message: "Internal server error" });
 	}
 };
