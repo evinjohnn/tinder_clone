@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Link, useNavigate } from "react-router-dom";
-import { User, LogOut, Menu } from "lucide-react"; // UPDATED: Removed Flame import
-import logo from '../images/logo.png'; // NEW: Import the logo
+import { User, LogOut, Menu } from "lucide-react";
+import logo from '/src/images/logo.png'; // Using absolute path
 
 export const Header = () => {
 	const { authUser, logout } = useAuthStore();
@@ -28,13 +28,17 @@ export const Header = () => {
 		setMobileMenuOpen(false);
 		navigate("/auth");
 	};
+    
+    // FIX: Safely get the user's profile picture.
+    // Use optional chaining (?.) to prevent crashes if `images` is not an array yet.
+    // Use the first image in the array.
+    const profilePic = authUser?.images?.[0] || "/avatar.png";
 
 	return (
 		<header className='bg-black/30 backdrop-blur-xl border-b border-zinc-700/30 sticky top-0 z-30'>
 			<div className='max-w-7xl mx-auto px-4'>
 				<div className='flex justify-between items-center h-16'>
 					<Link to='/' className='flex items-center space-x-3'>
-						{/* UPDATED: Replaced the yellow box and flame icon with your logo */}
 						<img src={logo} alt='DateX Logo' className='w-8 h-8' />
 						<span className='text-xl font-bold text-white'>DateX</span>
 					</Link>
@@ -47,7 +51,7 @@ export const Header = () => {
 									className='flex items-center px-3 py-1 rounded-full hover:bg-zinc-800 transition'
 								>
 									<img
-										src={authUser.image || "/avatar.png"}
+										src={profilePic} // Use the safe variable here
 										alt='User'
 										className='w-8 h-8 rounded-full object-cover'
 									/>
@@ -72,17 +76,7 @@ export const Header = () => {
 								)}
 							</div>
 						) : (
-							<>
-								<Link to='/auth' className='text-white hover:text-gray-300 transition'>
-									Login
-								</Link>
-								<Link
-									to='/auth'
-									className='bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition'
-								>
-									Sign Up
-								</Link>
-							</>
+							<></> // No buttons if not authenticated
 						)}
 					</div>
 
@@ -115,22 +109,7 @@ export const Header = () => {
 								</button>
 							</>
 						) : (
-							<>
-								<Link
-									to='/auth'
-									onClick={() => setMobileMenuOpen(false)}
-									className='block px-4 py-2 text-white hover:bg-zinc-800 rounded'
-								>
-									Login
-								</Link>
-								<Link
-									to='/auth'
-									onClick={() => setMobileMenuOpen(false)}
-									className='block px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition text-center'
-								>
-									Sign Up
-								</Link>
-							</>
+							<></>
 						)}
 					</div>
 				</div>
