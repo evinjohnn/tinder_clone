@@ -1,100 +1,121 @@
 // client/src/pages/HomePage.jsx
-import { useEffect, useState } from "react";
-import Sidebar from "../components/Sidebar";
-import { Header } from "../components/Header";
-import { useMatchStore, useAuthStore } from "../store";
-import { Loader2, Diamond, Frown } from "lucide-react"; // Added Frown
-import Layout from "../components/Layout";
-import ProfileCard from "../components/ProfileCard";
-import { Navigate } from "react-router-dom";
+import React, { useEffect, useState, useCallback } from 'react';
+import { useMatchStore, useAuthStore } from '../store';
+import { Loader2, Frown, X, Heart } from 'lucide-react';
+import Layout from '../components/Layout';
+import ProfileCard from '../components/ProfileCard';
+import BottomNavBar from '../components/BottomNavBar';
+import { Navigate } from 'react-router-dom';
+import { Header } from '../components/Header';
 
 const isProfileComplete = (user) => {
-    return user && user.images && user.images.length >= 6 && user.prompts && user.prompts.length >= 3;
+    // A more robust check
+    return user && Array.isArray(user.images) && user.images.length >= 1;
 };
 
 const HomePage = () => {
-    const [activeTab, setActiveTab] = useState('discover');
-    const { isLoading, getFeeds, discoverProfiles, standoutProfiles, sendLike, subscribeToNewMatches, unsubscribeFromNewMatches } = useMatchStore();
-	const { authUser } = useAuthStore();
+    const { getFeeds, sendLike, subscribeToNewMatches, unsubscribeFromNewMatches } = useMatchStore.getState();
+    const { isLoading, discoverProfiles } = useMatchStore((state) => ({
+        isLoading: state.isLoading,
+        discoverProfiles: state.discoverProfiles,
+    }));
+    const { authUser } = useAuthStore();
+    
+    const [currentIndex, setCurrentIndex] = useState(0);
 
-    if (authUser && !isProfileComplete(authUser)) {
+    useEffect(() => {
+        // FIX: Do not fetch data if there is no authenticated user.
+        if (authUser) {
+            getFeeds();
+            subscribeToNewMatches();
+        }
+        return () => {
+            if (authUser) {
+                unsubscribeFromNewMatches();
+            }
+        };
+	}, [authUser, getFeeds, subscribeToNewMatches, unsubscribeFromNewMatches]);
+
+    // This is a CRITICAL guard. If authUser is somehow null, we don't render.
+    if (!authUser) {
+        return <Navigate to="/auth" />;
+    }
+    
+    // This guard redirects users to complete their profile.
+    if (!isProfileComplete(authUser)) {
         return <Navigate to="/profile" />;
     }
 
-	useEffect(() => {
-        // FIX: This is the only data-fetching call needed now.
-        getFeeds();
-	}, [getFeeds]);
+    const currentProfile = discoverProfiles[currentIndex];
 
-    useEffect(() => {
-		if (authUser) {
-			subscribeToNewMatches();
-		}
-		return () => {
-			unsubscribeFromNewMatches();
-		};
-	}, [authUser, subscribeToNewMatches, unsubscribeFromNewMatches]);
-	
-	const handleLike = (user, likedContent, comment) => sendLike(user, likedContent, comment, false);
-    const handleRose = (user, likedContent, comment) => sendLike(user, likedContent, comment, true);
-    
-    const profilesToShow = activeTab === 'discover' ? discoverProfiles : standoutProfiles;
+    const handleAction = (actionType) => {
+        if (!currentProfile) return;
+        
+        if (actionType === 'like') {
+            const likedContent = currentProfile.prompts?.[0]?.prompt || 'their profile';
+            sendLike(currentProfile, likedContent);
+        }
+        
+        setCurrentIndex(prevIndex => prevIndex + 1);
+    };
 
-	return (
-		<Layout>
-			<div className='flex h-screen max-h-screen'>
-				<Sidebar />
-				<div className='flex-grow flex flex-col'>
-					<Header />
-                    <div className="flex justify-center p-2 bg-black/20 backdrop-blur-sm border-b border-zinc-700/30">
-                        <div className="bg-zinc-800 p-1 rounded-full flex items-center">
-                            <TabButton isActive={activeTab === 'discover'} onClick={() => setActiveTab('discover')}>Discover</TabButton>
-                            <TabButton isActive={activeTab === 'standouts'} onClick={() => setActiveTab('standouts')}>
-                                <Diamond size={16} className="text-cyan-400 mr-1"/>Standouts
-                            </TabButton>
-                        </div>
-                    </div>
-					<main className='flex-grow overflow-y-auto p-4'>
-						<div className="flex flex-col items-center">
-							{isLoading && <LoadingUI />}
-							{!isLoading && profilesToShow.length > 0 &&
-								profilesToShow.map(user => (
-									<ProfileCard 
-                                        key={user._id} 
-                                        user={user} 
-                                        onLike={handleLike} 
-                                        onRose={handleRose}
-                                        isStandout={activeTab === 'standouts'}
-                                    />
-								))
-							}
-                            {!isLoading && profilesToShow.length === 0 && <NoMoreProfiles tab={activeTab} />}
-						</div>
-					</main>
-				</div>
-			</div>
-		</Layout>
-	);
+    const renderContent = () => {
+        if (isLoading && discoverProfiles.length === 0) {
+            return <LoadingUI />;
+        }
+        if (!currentProfile) {
+            return <NoMoreProfilesUI />;
+        }
+        return (
+            <>
+                <ProfileCard userProfile={currentProfile} />
+                <div className="flex items-center justify-center gap-12 mt-6">
+                    <button onClick={() => handleAction('reject')} className="action-button border-red-500/50 text-red-500 hover:bg-red-500/20">
+                        <X size={32} strokeWidth={3} />
+                    </button>
+                    <button onClick={() => handleAction('like')} className="action-button border-green-400/50 text-green-400 hover:bg-green-400/20">
+                        <Heart size={32} strokeWidth={3} />
+                    </button>
+                </div>
+            </>
+        );
+    };
+
+    return (
+        <Layout>
+            <div className="flex flex-col h-screen max-h-screen">
+                <Header />
+                <div className="flex-grow flex flex-col justify-center items-center p-4 pb-24">
+                    {renderContent()}
+                </div>
+                <BottomNavBar />
+            </div>
+            <style jsx>{`
+                .action-button {
+                    padding: 1.25rem; /* p-5 */
+                    border-radius: 9999px; /* rounded-full */
+                    background-color: rgba(255, 255, 255, 0.1);
+                    backdrop-filter: blur(10px);
+                    border-width: 2px;
+                    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+                    transition: all 0.2s ease-in-out;
+                }
+                .action-button:hover {
+                    transform: scale(1.1);
+                }
+            `}</style>
+        </Layout>
+    );
 };
 
-const TabButton = ({ isActive, onClick, children }) => (
-    <button onClick={onClick} className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${isActive ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:bg-zinc-700'}`}>
-        <span className="flex items-center">{children}</span>
-    </button>
-);
+const LoadingUI = () => <div className='flex items-center justify-center h-full'><Loader2 className='text-yellow-400 animate-spin' size={48} /></div>;
 
-const LoadingUI = () => (
-	<div className='flex items-center justify-center h-[calc(100vh-12rem)]'>
-		<Loader2 className='text-yellow-400 animate-spin' size={48} />
-	</div>
-);
-
-const NoMoreProfiles = ({ tab }) => (
-	<div className='flex flex-col items-center justify-center h-[calc(100vh-12rem)] text-center text-white'>
-		<Frown size={64} className="text-yellow-400/50 mb-4" />
-		<h2 className="text-2xl font-bold">That's everyone for now!</h2>
-		<p className="text-gray-400 mt-2">You've seen all the {tab === 'discover' ? 'profiles' : 'standouts'}. Check back later.</p>
-	</div>
+const NoMoreProfilesUI = () => (
+    <div className='flex flex-col items-center justify-center h-full text-center text-white'>
+        <Frown size={64} className="text-zinc-500 mb-4" />
+        <h2 className="text-2xl font-bold">That's everyone for now!</h2>
+        <p className="text-gray-400 mt-2">Check back later for new profiles.</p>
+    </div>
 );
 
 export default HomePage;

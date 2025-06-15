@@ -1,3 +1,4 @@
+// client/src/store/useAuthStore.js
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
@@ -13,11 +14,15 @@ export const useAuthStore = create((set) => ({
 			set({ loading: true });
 			const res = await axiosInstance.post("/auth/signup", signupData);
 			set({ authUser: res.data.user });
-			initializeSocket(res.data.user._id);
-
-			toast.success("Account created successfully");
+			// FIX: Ensure user ID exists before initializing socket
+			if (res.data.user?._id) {
+				initializeSocket(res.data.user._id);
+			}
+			toast.success("Account created! Let's build your profile.");
+			return true;
 		} catch (error) {
-			toast.error(error.response.data.message || "Something went wrong");
+			toast.error(error.response?.data?.message || "Something went wrong");
+			return false;
 		} finally {
 			set({ loading: false });
 		}
@@ -27,35 +32,38 @@ export const useAuthStore = create((set) => ({
 			set({ loading: true });
 			const res = await axiosInstance.post("/auth/login", loginData);
 			set({ authUser: res.data.user });
-			initializeSocket(res.data.user._id);
+			if (res.data.user?._id) {
+				initializeSocket(res.data.user._id);
+			}
 			toast.success("Logged in successfully");
 		} catch (error) {
-			toast.error(error.response.data.message || "Something went wrong");
+			toast.error(error.response?.data?.message || "Something went wrong");
 		} finally {
 			set({ loading: false });
 		}
 	},
 	logout: async () => {
 		try {
-			const res = await axiosInstance.post("/auth/logout");
+			await axiosInstance.post("/auth/logout");
 			disconnectSocket();
-			if (res.status === 200) set({ authUser: null });
+			set({ authUser: null });
 		} catch (error) {
-			toast.error(error.response.data.message || "Something went wrong");
+			toast.error(error.response?.data?.message || "Something went wrong");
 		}
 	},
 	checkAuth: async () => {
 		try {
+			set({ checkingAuth: true });
 			const res = await axiosInstance.get("/auth/me");
-			initializeSocket(res.data.user._id);
+			if (res.data.user?._id) {
+				initializeSocket(res.data.user._id);
+			}
 			set({ authUser: res.data.user });
 		} catch (error) {
 			set({ authUser: null });
-			console.log(error);
 		} finally {
 			set({ checkingAuth: false });
 		}
 	},
-
 	setAuthUser: (user) => set({ authUser: user }),
 }));
