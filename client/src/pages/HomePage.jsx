@@ -9,39 +9,38 @@ import { Navigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 
 const isProfileComplete = (user) => {
-    // A more robust check
     return user && Array.isArray(user.images) && user.images.length >= 1;
 };
 
 const HomePage = () => {
-    const { getFeeds, sendLike, subscribeToNewMatches, unsubscribeFromNewMatches } = useMatchStore.getState();
+    const { authUser } = useAuthStore();
+    // Select state variables for re-renders
     const { isLoading, discoverProfiles } = useMatchStore((state) => ({
         isLoading: state.isLoading,
         discoverProfiles: state.discoverProfiles,
     }));
-    const { authUser } = useAuthStore();
     
     const [currentIndex, setCurrentIndex] = useState(0);
 
+    // FIX: This useEffect hook is now completely safe.
     useEffect(() => {
-        // FIX: Do not fetch data if there is no authenticated user.
-        if (authUser) {
-            getFeeds();
-            subscribeToNewMatches();
+        if (authUser && isProfileComplete(authUser)) {
+            // Call store actions using the stable getState() method inside the effect
+            useMatchStore.getState().getFeeds();
+            useMatchStore.getState().subscribeToNewMatches();
         }
+        // The return function (cleanup) will run when the component unmounts
         return () => {
             if (authUser) {
-                unsubscribeFromNewMatches();
+                useMatchStore.getState().unsubscribeFromNewMatches();
             }
         };
-	}, [authUser, getFeeds, subscribeToNewMatches, unsubscribeFromNewMatches]);
+	}, [authUser]); // Only re-run this effect if `authUser` changes.
 
-    // This is a CRITICAL guard. If authUser is somehow null, we don't render.
     if (!authUser) {
         return <Navigate to="/auth" />;
     }
     
-    // This guard redirects users to complete their profile.
     if (!isProfileComplete(authUser)) {
         return <Navigate to="/profile" />;
     }
@@ -53,13 +52,14 @@ const HomePage = () => {
         
         if (actionType === 'like') {
             const likedContent = currentProfile.prompts?.[0]?.prompt || 'their profile';
-            sendLike(currentProfile, likedContent);
+            useMatchStore.getState().sendLike(currentProfile, likedContent);
         }
         
         setCurrentIndex(prevIndex => prevIndex + 1);
     };
 
     const renderContent = () => {
+        // Show loader only if it's the very first load
         if (isLoading && discoverProfiles.length === 0) {
             return <LoadingUI />;
         }
@@ -90,26 +90,15 @@ const HomePage = () => {
                 </div>
                 <BottomNavBar />
             </div>
-            <style jsx>{`
-                .action-button {
-                    padding: 1.25rem; /* p-5 */
-                    border-radius: 9999px; /* rounded-full */
-                    background-color: rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(10px);
-                    border-width: 2px;
-                    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-                    transition: all 0.2s ease-in-out;
-                }
-                .action-button:hover {
-                    transform: scale(1.1);
-                }
+            <style>{`
+                .action-button { padding: 1.25rem; border-radius: 9999px; background-color: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-width: 2px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); transition: all 0.2s ease-in-out; }
+                .action-button:hover { transform: scale(1.1); }
             `}</style>
         </Layout>
     );
 };
 
 const LoadingUI = () => <div className='flex items-center justify-center h-full'><Loader2 className='text-yellow-400 animate-spin' size={48} /></div>;
-
 const NoMoreProfilesUI = () => (
     <div className='flex flex-col items-center justify-center h-full text-center text-white'>
         <Frown size={64} className="text-zinc-500 mb-4" />
