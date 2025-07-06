@@ -1,53 +1,111 @@
 // client/src/components/BottomNavBar.jsx
 import React from 'react';
-import { Compass, Heart, MessageCircle, User as UserIcon } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
-import { useMatchStore } from '../store';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Heart, Star, MessageCircle, User, Crown } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
+import { useAuthStore } from '../store/useAuthStore';
 
 const BottomNavBar = () => {
-    // FIX: Use nullish coalescing (??) to provide a safe default (empty array).
-    // This prevents the app from crashing if the store data is not yet available.
-    const { incomingLikes = [], matches = [] } = useMatchStore(state => ({
-        incomingLikes: state.incomingLikes,
-        matches: state.matches,
-    }));
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { isDark } = useTheme();
+    const { authUser } = useAuthStore();
 
     const navItems = [
-        { to: "/", icon: Compass, label: "Discover", badgeCount: 0 },
-        { to: "/likes", icon: Heart, label: "Likes", badgeCount: incomingLikes.length },
-        { to: "/chat", icon: MessageCircle, label: "Messages", badgeCount: matches.length },
-        { to: "/profile", icon: UserIcon, label: "Profile", badgeCount: 0 },
+        {
+            path: '/',
+            icon: Heart,
+            label: 'Discover',
+            isActive: location.pathname === '/'
+        },
+        {
+            path: '/likes',
+            icon: Star,
+            label: 'Likes',
+            isActive: location.pathname === '/likes'
+        },
+        {
+            path: '/standouts',
+            icon: Crown,
+            label: 'Standouts',
+            isActive: location.pathname === '/standouts',
+            isPremium: true
+        },
+        {
+            path: '/chat',
+            icon: MessageCircle,
+            label: 'Matches',
+            isActive: location.pathname.startsWith('/chat')
+        },
+        {
+            path: '/profile',
+            icon: User,
+            label: 'Profile',
+            isActive: location.pathname === '/profile'
+        }
     ];
 
-    const activeStyle = {
-        color: '#facc15', // a vibrant yellow (theme.colors.yellow[400])
-        transform: 'scale(1.05)',
-    };
-
     return (
-        <nav className="fixed bottom-0 left-0 right-0 h-20 bg-black/70 backdrop-blur-lg border-t border-zinc-700/50 z-50">
-            <div className="max-w-md mx-auto h-full grid grid-cols-4 gap-4">
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.label}
-                        to={item.to}
-                        end={item.to === "/"}
-                        style={({ isActive }) => (isActive ? activeStyle : {})}
-                        className="flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-white transition-all duration-200 ease-in-out group"
-                    >
-                        <div className="relative">
-                            <item.icon size={28} strokeWidth={2.5} />
-                            {item.badgeCount > 0 && (
-                                <span className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white ring-2 ring-black/70">
-                                    {item.badgeCount}
-                                </span>
+        <div className={`fixed bottom-0 left-0 right-0 border-t backdrop-blur-lg z-50 ${
+            isDark 
+                ? 'bg-gray-800/90 border-gray-700' 
+                : 'bg-white/90 border-gray-200'
+        }`}>
+            <div className="flex items-center justify-around py-2">
+                {navItems.map((item) => {
+                    const Icon = item.icon;
+                    const isDisabled = item.isPremium && !authUser?.isPremium;
+                    
+                    return (
+                        <motion.button
+                            key={item.path}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                                if (isDisabled) {
+                                    navigate('/premium');
+                                } else {
+                                    navigate(item.path);
+                                }
+                            }}
+                            className={`flex flex-col items-center p-3 transition-all duration-300 ${
+                                isDisabled
+                                    ? (isDark ? 'text-gray-600' : 'text-gray-400')
+                                    : item.isActive
+                                        ? (isDark ? 'text-pink-400' : 'text-pink-500')
+                                        : (isDark ? 'text-gray-400' : 'text-gray-600')
+                            }`}
+                            disabled={false} // Allow clicking even for premium features to show upgrade page
+                        >
+                            <div className="relative">
+                                <Icon 
+                                    className={`w-6 h-6 ${
+                                        item.isActive ? 'fill-current' : ''
+                                    }`} 
+                                />
+                                {item.isPremium && !authUser?.isPremium && (
+                                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
+                                        <Crown className="w-2 h-2 text-white" />
+                                    </div>
+                                )}
+                            </div>
+                            <span className={`text-xs mt-1 font-medium ${
+                                item.isActive ? 'font-semibold' : ''
+                            }`}>
+                                {item.label}
+                            </span>
+                            {item.isActive && (
+                                <motion.div
+                                    layoutId="activeTab"
+                                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-pink-500 rounded-full"
+                                />
                             )}
-                        </div>
-                        <span className="text-xs font-bold">{item.label}</span>
-                    </NavLink>
-                ))}
+                        </motion.button>
+                    );
+                })}
             </div>
-        </nav>
+        </div>
     );
 };
 
