@@ -375,3 +375,42 @@ async function optimizeImage(base64Image) {
         return base64Image; // Return original if optimization fails
     }
 }
+
+// Helper function to validate images (3-6 photos with format validation)
+async function validateImage(base64Image) {
+    try {
+        // Check if it's a valid base64 image
+        if (!base64Image.startsWith('data:image/')) {
+            return { valid: false, error: 'Invalid image format' };
+        }
+
+        // Extract image type
+        const imageType = base64Image.split(';')[0].split('/')[1];
+        const allowedTypes = ['jpeg', 'jpg', 'png', 'webp'];
+        
+        if (!allowedTypes.includes(imageType.toLowerCase())) {
+            return { valid: false, error: 'Unsupported image format. Please use JPEG, PNG, or WebP' };
+        }
+
+        // Check file size (max 10MB)
+        const base64Data = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const sizeInMB = buffer.length / (1024 * 1024);
+        
+        if (sizeInMB > 10) {
+            return { valid: false, error: 'Image size too large. Maximum 10MB allowed' };
+        }
+
+        // Validate image dimensions and content using Sharp
+        const metadata = await sharp(buffer).metadata();
+        
+        if (metadata.width < 200 || metadata.height < 200) {
+            return { valid: false, error: 'Image too small. Minimum 200x200 pixels required' };
+        }
+
+        return { valid: true };
+    } catch (error) {
+        console.error('Error validating image:', error);
+        return { valid: false, error: 'Invalid or corrupted image file' };
+    }
+}
