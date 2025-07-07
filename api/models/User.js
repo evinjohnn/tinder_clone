@@ -17,7 +17,7 @@ const questionnaireSchema = new mongoose.Schema({
     hasChildren: { type: Boolean, default: false },
     wantsChildren: { type: String, enum: ["yes", "no", "maybe"], default: "maybe" },
     
-    // Lifestyle
+    // Enhanced Lifestyle Questions (Hinge/Bumble Style)
     fitnessLevel: { type: String, enum: ["never", "rarely", "sometimes", "often", "daily"], default: "sometimes" },
     socialLevel: { type: String, enum: ["homebody", "sometimes", "social", "very_social"], default: "sometimes" },
     drinkingHabits: { type: String, enum: ["never", "rarely", "socially", "regularly"], default: "socially" },
@@ -25,6 +25,55 @@ const questionnaireSchema = new mongoose.Schema({
     diet: { type: String, enum: ["omnivore", "vegetarian", "vegan", "pescatarian", "other"], default: "omnivore" },
     politicalViews: { type: String, enum: ["liberal", "moderate", "conservative", "other", "prefer_not_to_say"], default: "prefer_not_to_say" },
     religiousViews: { type: String, enum: ["agnostic", "atheist", "buddhist", "christian", "hindu", "jewish", "muslim", "other", "prefer_not_to_say"], default: "prefer_not_to_say" },
+    
+    // NEW: Comprehensive Lifestyle & Personality Questions
+    sleepSchedule: { type: String, enum: ["early_bird", "night_owl", "flexible", "depends_on_work"], default: "flexible" },
+    travelFrequency: { type: String, enum: ["never", "rarely", "few_times_year", "monthly", "frequently"], default: "few_times_year" },
+    adventureLevel: { type: String, enum: ["low", "moderate", "high", "extreme"], default: "moderate" },
+    introExtrovert: { type: String, enum: ["introvert", "ambivert", "extrovert"], default: "ambivert" },
+    conflictResolution: { type: String, enum: ["avoid", "discuss_calmly", "debate", "need_time"], default: "discuss_calmly" },
+    
+    // Financial & Career
+    careerAmbition: { type: String, enum: ["low", "moderate", "high", "workaholic"], default: "moderate" },
+    financialGoals: { type: String, enum: ["save_money", "enjoy_now", "invest_future", "balanced"], default: "balanced" },
+    spendingHabits: { type: String, enum: ["frugal", "moderate", "generous", "lavish"], default: "moderate" },
+    
+    // Social & Entertainment
+    partyPreference: { type: String, enum: ["intimate_gatherings", "house_parties", "clubs_bars", "avoid_parties"], default: "intimate_gatherings" },
+    musicGenres: [{ type: String }], // Array of preferred music genres
+    hobbies: [{ type: String }], // Array of hobbies
+    sportsInterest: { type: String, enum: ["none", "watching", "playing", "both"], default: "none" },
+    petPreference: { type: String, enum: ["love_all", "dogs", "cats", "other", "none"], default: "love_all" },
+    
+    // Values & Beliefs
+    familyImportance: { type: String, enum: ["not_important", "somewhat", "important", "very_important"], default: "important" },
+    friendshipStyle: { type: String, enum: ["few_close", "many_casual", "mixed", "independent"], default: "mixed" },
+    communicationNeeds: { type: String, enum: ["constant", "daily", "few_times_week", "when_needed"], default: "daily" },
+    affectionLevel: { type: String, enum: ["low", "moderate", "high", "very_high"], default: "moderate" },
+    
+    // Lifestyle Preferences
+    livingArrangement: { type: String, enum: ["alone", "roommates", "family", "partner"], default: "alone" },
+    cleanliness: { type: String, enum: ["messy", "lived_in", "clean", "spotless"], default: "clean" },
+    cookingSkills: { type: String, enum: ["cant_cook", "basic", "good", "excellent"], default: "basic" },
+    foodAdventure: { type: String, enum: ["picky", "safe_choices", "adventurous", "try_anything"], default: "safe_choices" },
+    
+    // Technology & Media
+    socialMediaUsage: { type: String, enum: ["heavy", "moderate", "light", "none"], default: "moderate" },
+    gamingHabits: { type: String, enum: ["never", "casual", "regular", "hardcore"], default: "never" },
+    booksVsMovies: { type: String, enum: ["books", "movies", "both", "neither"], default: "both" },
+    newsInterest: { type: String, enum: ["none", "headlines", "moderate", "news_junkie"], default: "headlines" },
+    
+    // Personal Growth & Wellness
+    mentalHealthOpenness: { type: String, enum: ["private", "close_friends", "open", "very_open"], default: "close_friends" },
+    selfCareImportance: { type: String, enum: ["low", "moderate", "high", "priority"], default: "moderate" },
+    personalGrowth: { type: String, enum: ["content", "some_growth", "always_improving", "transformation"], default: "some_growth" },
+    stressManagement: { type: String, enum: ["bottle_up", "friends", "exercise", "professional"], default: "friends" },
+    
+    // Relationship Specifics
+    jealousyLevel: { type: String, enum: ["none", "low", "moderate", "high"], default: "low" },
+    independenceNeed: { type: String, enum: ["low", "moderate", "high", "very_high"], default: "moderate" },
+    romanticGestures: { type: String, enum: ["unnecessary", "occasional", "regular", "constant"], default: "occasional" },
+    futureTimeline: { type: String, enum: ["no_rush", "year_two", "soon", "now"], default: "no_rush" },
     
     // Personality & Interests
     interests: [{ type: String }],
@@ -34,6 +83,13 @@ const questionnaireSchema = new mongoose.Schema({
     // Communication
     communicationStyle: { type: String, enum: ["texter", "caller", "video_chat", "in_person"], default: "texter" },
     responseTime: { type: String, enum: ["immediate", "within_hours", "within_day", "when_convenient"], default: "within_hours" },
+    
+    // NEW: Advanced Compatibility Factors
+    morningOrNight: { type: String, enum: ["morning_person", "night_person", "depends"], default: "depends" },
+    plannerOrSpontaneous: { type: String, enum: ["planner", "spontaneous", "mix"], default: "mix" },
+    optimistOrRealist: { type: String, enum: ["optimist", "realist", "pessimist"], default: "realist" },
+    competitiveLevel: { type: String, enum: ["not_competitive", "friendly", "competitive", "very_competitive"], default: "friendly" },
+    humorStyle: { type: String, enum: ["dry", "silly", "witty", "sarcastic", "wholesome"], default: "witty" },
 });
 
 const behaviorMetricsSchema = new mongoose.Schema({
