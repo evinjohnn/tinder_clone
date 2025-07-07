@@ -8,9 +8,9 @@ const getBackendURL = () => {
         return import.meta.env.VITE_BACKEND_URL;
     }
     
-    // Check for React environment variables (for compatibility)
-    if (process.env.REACT_APP_BACKEND_URL) {
-        return process.env.REACT_APP_BACKEND_URL;
+    // Check for React environment variables (for compatibility with Vite)
+    if (import.meta.env.VITE_REACT_APP_BACKEND_URL) {
+        return import.meta.env.VITE_REACT_APP_BACKEND_URL;
     }
     
     // Fallback to localhost for development
