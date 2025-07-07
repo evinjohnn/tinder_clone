@@ -273,7 +273,7 @@ userSchema.pre("save", function (next) {
     next();
 });
 
-// Update credibility score
+// Enhanced Credibility Score Algorithm (as per specification)
 userSchema.methods.updateCredibilityScore = function() {
     const metrics = this.behaviorMetrics;
     const weights = {
@@ -286,33 +286,51 @@ userSchema.methods.updateCredibilityScore = function() {
     // Normalize account age (max 365 days = 100 points)
     const normalizedAccountAge = Math.min(this.accountAge / 365 * 100, 100);
     
-    this.credibilityScore = Math.round(
+    // Enhanced calculation with bonus factors
+    let baseScore = Math.round(
         (metrics.averageRating * 20 * weights.averageRating) +
         (metrics.responseRate * weights.responseRate) +
         (this.profileCompleteness * weights.profileCompleteness) +
         (normalizedAccountAge * weights.accountAge)
     );
     
-    // Ensure score is between 0 and 100
-    this.credibilityScore = Math.max(0, Math.min(100, this.credibilityScore));
+    // Bonus factors for premium features
+    if (this.isVerified) baseScore += 5;
+    if (this.isPhotoVerified) baseScore += 5;
+    if (this.images && this.images.length >= 6) baseScore += 3;
+    if (this.prompts && this.prompts.length >= 3) baseScore += 3;
+    if (this.questionnaire && Object.keys(this.questionnaire).length >= 20) baseScore += 4;
+    
+    // Penalty for negative behaviors
+    if (metrics.reportCount > 0) baseScore -= (metrics.reportCount * 3);
+    if (metrics.ghostingIncidents > 0) baseScore -= (metrics.ghostingIncidents * 2);
+    
+    this.credibilityScore = Math.max(0, Math.min(100, baseScore));
 };
 
-// Update behavior index
+// Enhanced Behavior Index Algorithm (as per specification)
 userSchema.methods.updateBehaviorIndex = function() {
     const metrics = this.behaviorMetrics;
     const baseScore = 85;
     
     let behaviorScore = baseScore;
     
-    // Negative behaviors
+    // Negative behaviors (penalties)
     behaviorScore -= (metrics.reportCount * 5);
     behaviorScore -= (metrics.ghostingIncidents * 3);
     behaviorScore -= (metrics.inappropriateMessages * 10);
     
-    // Positive behaviors
+    // Severe penalty for fake profiles
+    if (metrics.reportCount > 5) behaviorScore -= 50;
+    
+    // Positive behaviors (rewards)
     behaviorScore += (metrics.positiveInteractions * 2);
     behaviorScore += Math.min(metrics.conversationLength / 10, 5);
     behaviorScore += (metrics.mutualMatches * 3);
+    
+    // Bonus for consistent activity
+    if (metrics.responseRate > 90) behaviorScore += 5;
+    if (this.lastActive && (Date.now() - this.lastActive) < 24 * 60 * 60 * 1000) behaviorScore += 2;
     
     this.behaviorIndex = Math.max(0, Math.min(100, Math.round(behaviorScore)));
 };
