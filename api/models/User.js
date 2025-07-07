@@ -335,9 +335,219 @@ userSchema.methods.updateBehaviorIndex = function() {
     this.behaviorIndex = Math.max(0, Math.min(100, Math.round(behaviorScore)));
 };
 
-// Password comparison method
-userSchema.methods.matchPassword = async function (enteredPassword) {
-    return await bcrypt.compare(enteredPassword, this.password);
+// Advanced Match Suggestion Algorithm (as per specification)
+userSchema.methods.calculateMatchScore = function(otherUser) {
+    let matchScore = 0;
+    const weights = {
+        compatibility: 0.35,
+        proximity: 0.25,
+        activity: 0.20,
+        credibility: 0.15,
+        preferences: 0.05
+    };
+    
+    // 1. Compatibility Score (interests, values, lifestyle)
+    const compatibilityScore = this.calculateCompatibility(otherUser);
+    matchScore += compatibilityScore * weights.compatibility;
+    
+    // 2. Proximity Score (location-based)
+    const proximityScore = this.calculateProximity(otherUser);
+    matchScore += proximityScore * weights.proximity;
+    
+    // 3. Activity Score (recent app usage)
+    const activityScore = this.calculateActivity(otherUser);
+    matchScore += activityScore * weights.activity;
+    
+    // 4. Credibility Score (user reputation)
+    const credibilityScore = (this.credibilityScore + otherUser.credibilityScore) / 2;
+    matchScore += credibilityScore * weights.credibility;
+    
+    // 5. Preferences Score (age, height, etc.)
+    const preferencesScore = this.calculatePreferences(otherUser);
+    matchScore += preferencesScore * weights.preferences;
+    
+    return Math.round(matchScore);
+};
+
+// Helper method: Calculate compatibility based on questionnaire
+userSchema.methods.calculateCompatibility = function(otherUser) {
+    const myQuestionnaire = this.questionnaire || {};
+    const otherQuestionnaire = otherUser.questionnaire || {};
+    
+    let compatibilityPoints = 0;
+    let totalComparisons = 0;
+    
+    // Define compatibility weights for different aspects
+    const compatibilityFactors = {
+        relationshipGoals: { weight: 10, exact: true },
+        drinkingHabits: { weight: 5, exact: false },
+        smokingHabits: { weight: 7, exact: false },
+        fitnessLevel: { weight: 4, exact: false },
+        religiousViews: { weight: 6, exact: false },
+        politicalViews: { weight: 5, exact: false },
+        wantsChildren: { weight: 9, exact: true },
+        adventureLevel: { weight: 4, exact: false },
+        introExtrovert: { weight: 3, exact: false },
+        morningOrNight: { weight: 2, exact: false },
+        plannerOrSpontaneous: { weight: 3, exact: false },
+        humorStyle: { weight: 4, exact: false }
+    };
+    
+    // Calculate compatibility for each factor
+    for (const [factor, config] of Object.entries(compatibilityFactors)) {
+        if (myQuestionnaire[factor] && otherQuestionnaire[factor]) {
+            totalComparisons += config.weight;
+            
+            if (config.exact) {
+                // Exact match required
+                if (myQuestionnaire[factor] === otherQuestionnaire[factor]) {
+                    compatibilityPoints += config.weight;
+                }
+            } else {
+                // Partial compatibility allowed
+                const compatibility = this.calculateFactorCompatibility(
+                    myQuestionnaire[factor], 
+                    otherQuestionnaire[factor], 
+                    factor
+                );
+                compatibilityPoints += compatibility * config.weight;
+            }
+        }
+    }
+    
+    // Calculate interests overlap
+    const myInterests = myQuestionnaire.interests || [];
+    const otherInterests = otherQuestionnaire.interests || [];
+    const commonInterests = myInterests.filter(interest => 
+        otherInterests.includes(interest)
+    );
+    const interestCompatibility = Math.min(commonInterests.length * 10, 30);
+    compatibilityPoints += interestCompatibility;
+    totalComparisons += 30;
+    
+    // Calculate love languages compatibility
+    const myLoveLanguages = myQuestionnaire.loveLanguages || [];
+    const otherLoveLanguages = otherQuestionnaire.loveLanguages || [];
+    const commonLoveLanguages = myLoveLanguages.filter(lang => 
+        otherLoveLanguages.includes(lang)
+    );
+    const loveLanguageCompatibility = Math.min(commonLoveLanguages.length * 15, 20);
+    compatibilityPoints += loveLanguageCompatibility;
+    totalComparisons += 20;
+    
+    return totalComparisons > 0 ? Math.round((compatibilityPoints / totalComparisons) * 100) : 50;
+};
+
+// Helper method: Calculate factor compatibility
+userSchema.methods.calculateFactorCompatibility = function(myValue, otherValue, factor) {
+    const compatibilityMatrix = {
+        drinkingHabits: {
+            never: { never: 1, rarely: 0.8, socially: 0.3, regularly: 0.1 },
+            rarely: { never: 0.8, rarely: 1, socially: 0.7, regularly: 0.4 },
+            socially: { never: 0.3, rarely: 0.7, socially: 1, regularly: 0.6 },
+            regularly: { never: 0.1, rarely: 0.4, socially: 0.6, regularly: 1 }
+        },
+        smokingHabits: {
+            never: { never: 1, rarely: 0.6, socially: 0.2, regularly: 0.1 },
+            rarely: { never: 0.6, rarely: 1, socially: 0.7, regularly: 0.5 },
+            socially: { never: 0.2, rarely: 0.7, socially: 1, regularly: 0.8 },
+            regularly: { never: 0.1, rarely: 0.5, socially: 0.8, regularly: 1 }
+        },
+        fitnessLevel: {
+            never: { never: 1, rarely: 0.8, sometimes: 0.5, often: 0.3, daily: 0.2 },
+            rarely: { never: 0.8, rarely: 1, sometimes: 0.7, often: 0.5, daily: 0.3 },
+            sometimes: { never: 0.5, rarely: 0.7, sometimes: 1, often: 0.8, daily: 0.6 },
+            often: { never: 0.3, rarely: 0.5, sometimes: 0.8, often: 1, daily: 0.9 },
+            daily: { never: 0.2, rarely: 0.3, sometimes: 0.6, often: 0.9, daily: 1 }
+        }
+    };
+    
+    if (compatibilityMatrix[factor] && compatibilityMatrix[factor][myValue]) {
+        return compatibilityMatrix[factor][myValue][otherValue] || 0.5;
+    }
+    
+    return myValue === otherValue ? 1 : 0.5;
+};
+
+// Helper method: Calculate proximity score
+userSchema.methods.calculateProximity = function(otherUser) {
+    if (!this.location || !otherUser.location || 
+        !this.location.coordinates || !otherUser.location.coordinates) {
+        return 50; // Default score if location not available
+    }
+    
+    const distance = this.calculateDistance(
+        this.location.coordinates,
+        otherUser.location.coordinates
+    );
+    
+    // Score based on distance (closer = higher score)
+    if (distance <= 5) return 100;
+    if (distance <= 10) return 90;
+    if (distance <= 25) return 75;
+    if (distance <= 50) return 60;
+    if (distance <= 100) return 40;
+    return 20;
+};
+
+// Helper method: Calculate activity score
+userSchema.methods.calculateActivity = function(otherUser) {
+    const now = new Date();
+    const myLastActive = this.lastActive || new Date(0);
+    const otherLastActive = otherUser.lastActive || new Date(0);
+    
+    // Calculate how recent each user was active (in hours)
+    const myHoursSinceActive = (now - myLastActive) / (1000 * 60 * 60);
+    const otherHoursSinceActive = (now - otherLastActive) / (1000 * 60 * 60);
+    
+    // Score based on recent activity
+    const myActivityScore = Math.max(0, 100 - myHoursSinceActive * 2);
+    const otherActivityScore = Math.max(0, 100 - otherHoursSinceActive * 2);
+    
+    return Math.round((myActivityScore + otherActivityScore) / 2);
+};
+
+// Helper method: Calculate preferences score
+userSchema.methods.calculatePreferences = function(otherUser) {
+    let score = 100;
+    
+    // Age preference check
+    if (this.ageRange) {
+        if (otherUser.age < this.ageRange.min || otherUser.age > this.ageRange.max) {
+            score -= 30;
+        }
+    }
+    
+    // Gender preference check
+    if (this.genderPreference !== 'all' && this.genderPreference !== otherUser.gender) {
+        score -= 50;
+    }
+    
+    // Height preference (basic implementation)
+    if (this.questionnaire?.height && otherUser.questionnaire?.height) {
+        const heightDiff = Math.abs(this.questionnaire.height - otherUser.questionnaire.height);
+        if (heightDiff > 12) { // More than 12 inches difference
+            score -= 20;
+        }
+    }
+    
+    return Math.max(0, score);
+};
+
+// Helper method: Calculate distance between two coordinates
+userSchema.methods.calculateDistance = function(coords1, coords2) {
+    const R = 3959; // Earth's radius in miles
+    const lat1 = coords1[1] * Math.PI / 180;
+    const lat2 = coords2[1] * Math.PI / 180;
+    const deltaLat = (coords2[1] - coords1[1]) * Math.PI / 180;
+    const deltaLon = (coords2[0] - coords1[0]) * Math.PI / 180;
+    
+    const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+              Math.cos(lat1) * Math.cos(lat2) *
+              Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    return R * c;
 };
 
 // Increment login attempts
