@@ -314,11 +314,19 @@ export const getCompatibilityScore = async (req, res) => {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        const score = await matchingAlgorithm.calculateMatchScore(currentUser, targetUser);
+        // Use the enhanced User model method
+        const score = currentUser.calculateMatchScore(targetUser);
         
         res.status(200).json({ 
             success: true, 
-            compatibilityScore: score 
+            compatibilityScore: score,
+            breakdown: {
+                compatibility: currentUser.calculateCompatibility(targetUser),
+                proximity: currentUser.calculateProximity(targetUser),
+                activity: currentUser.calculateActivity(targetUser),
+                credibility: (currentUser.credibilityScore + targetUser.credibilityScore) / 2,
+                preferences: currentUser.calculatePreferences(targetUser)
+            }
         });
     } catch (error) {
         console.log("Error in getCompatibilityScore: ", error);
