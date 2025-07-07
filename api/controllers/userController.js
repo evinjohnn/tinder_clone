@@ -24,13 +24,34 @@ export const updateProfile = async (req, res) => {
             };
         }
 
-        // Handle images array
+        // Handle images array with enhanced validation (3-6 photos)
         if (images && Array.isArray(images)) {
+            // Validate photo count (3-6 photos required)
+            if (images.length < 3) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Minimum 3 photos required for profile completion" 
+                });
+            }
+            
+            if (images.length > 6) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Maximum 6 photos allowed" 
+                });
+            }
+
             const uploadedImageUrls = await Promise.all(
                 images.map(async (image) => {
                     // If it's a new base64 image string, upload it to Cloudinary
                     if (image && image.startsWith("data:image")) {
                         try {
+                            // Validate image format and size
+                            const imageValidation = await validateImage(image);
+                            if (!imageValidation.valid) {
+                                throw new Error(imageValidation.error);
+                            }
+
                             // Optimize image before upload
                             const optimizedImage = await optimizeImage(image);
                             
@@ -56,7 +77,17 @@ export const updateProfile = async (req, res) => {
             );
 
             // Filter out failed uploads
-            updatedData.images = uploadedImageUrls.filter(url => url !== null);
+            const validImages = uploadedImageUrls.filter(url => url !== null);
+            
+            // Ensure we still have minimum required photos after processing
+            if (validImages.length < 3) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Failed to process enough photos. Please ensure all photos are valid and try again." 
+                });
+            }
+            
+            updatedData.images = validImages;
         }
 
         // Update the user
