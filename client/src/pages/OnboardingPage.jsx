@@ -440,7 +440,7 @@ const PromptsStep = ({ formData, setFormData }) => {
 // Questionnaire Step Component - Enhanced with 50+ comprehensive fields
 const QuestionnaireStep = ({ formData, setFormData }) => {
     const { isDark } = useTheme();
-    const [currentSection, setCurrentSection] = useState(0);
+    const [currentSection, setCurrentSection] = React.useState(0);
     
     const updateQuestionnaire = (field, value) => {
         setFormData(prev => ({
