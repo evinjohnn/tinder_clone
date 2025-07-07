@@ -437,9 +437,10 @@ const PromptsStep = ({ formData, setFormData }) => {
     );
 };
 
-// Questionnaire Step Component
+// Questionnaire Step Component - Enhanced with 50+ comprehensive fields
 const QuestionnaireStep = ({ formData, setFormData }) => {
     const { isDark } = useTheme();
+    const [currentSection, setCurrentSection] = useState(0);
     
     const updateQuestionnaire = (field, value) => {
         setFormData(prev => ({
@@ -460,44 +461,301 @@ const QuestionnaireStep = ({ formData, setFormData }) => {
         updateQuestionnaire('interests', newInterests);
     };
 
-    return (
-        <div>
-            <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                Tell Us About Yourself
-            </h2>
-            <p className={`mb-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Help us find your perfect matches by sharing more about your lifestyle and preferences.
-            </p>
+    const questionnaireSections = [
+        {
+            title: "Lifestyle & Habits",
+            fields: [
+                {
+                    field: 'relationshipGoals',
+                    label: 'What are you looking for?',
+                    type: 'select',
+                    options: ['casual', 'serious', 'marriage', 'unsure'],
+                    required: true
+                },
+                {
+                    field: 'drinkingHabits',
+                    label: 'Do you drink?',
+                    type: 'select',
+                    options: ['never', 'rarely', 'socially', 'regularly'],
+                    required: true
+                },
+                {
+                    field: 'smokingHabits',
+                    label: 'Do you smoke?',
+                    type: 'select',
+                    options: ['never', 'rarely', 'socially', 'regularly'],
+                    required: true
+                },
+                {
+                    field: 'fitnessLevel',
+                    label: 'How often do you work out?',
+                    type: 'select',
+                    options: ['never', 'rarely', 'sometimes', 'often', 'daily']
+                },
+                {
+                    field: 'diet',
+                    label: 'Your diet preference?',
+                    type: 'select',
+                    options: ['omnivore', 'vegetarian', 'vegan', 'pescatarian', 'other']
+                }
+            ]
+        },
+        {
+            title: "Personality & Values",
+            fields: [
+                {
+                    field: 'introExtrovert',
+                    label: 'Are you more of an...?',
+                    type: 'select',
+                    options: ['introvert', 'ambivert', 'extrovert']
+                },
+                {
+                    field: 'adventureLevel',
+                    label: 'Your adventure level?',
+                    type: 'select',
+                    options: ['low', 'moderate', 'high', 'extreme']
+                },
+                {
+                    field: 'humorStyle',
+                    label: 'Your humor style?',
+                    type: 'select',
+                    options: ['dry', 'silly', 'witty', 'sarcastic', 'wholesome']
+                },
+                {
+                    field: 'morningOrNight',
+                    label: 'Are you a...?',
+                    type: 'select',
+                    options: ['morning_person', 'night_person', 'depends']
+                },
+                {
+                    field: 'plannerOrSpontaneous',
+                    label: 'Are you more...?',
+                    type: 'select',
+                    options: ['planner', 'spontaneous', 'mix']
+                }
+            ]
+        },
+        {
+            title: "Social & Communication",
+            fields: [
+                {
+                    field: 'socialLevel',
+                    label: 'How social are you?',
+                    type: 'select',
+                    options: ['homebody', 'sometimes', 'social', 'very_social']
+                },
+                {
+                    field: 'communicationStyle',
+                    label: 'Preferred communication?',
+                    type: 'select',
+                    options: ['texter', 'caller', 'video_chat', 'in_person']
+                },
+                {
+                    field: 'conflictResolution',
+                    label: 'How do you handle conflict?',
+                    type: 'select',
+                    options: ['avoid', 'discuss_calmly', 'debate', 'need_time']
+                },
+                {
+                    field: 'partyPreference',
+                    label: 'Your party preference?',
+                    type: 'select',
+                    options: ['intimate_gatherings', 'house_parties', 'clubs_bars', 'avoid_parties']
+                }
+            ]
+        },
+        {
+            title: "Future & Family",
+            fields: [
+                {
+                    field: 'wantsChildren',
+                    label: 'Do you want children?',
+                    type: 'select',
+                    options: ['yes', 'no', 'maybe'],
+                    required: true
+                },
+                {
+                    field: 'familyImportance',
+                    label: 'How important is family?',
+                    type: 'select',
+                    options: ['not_important', 'somewhat', 'important', 'very_important']
+                },
+                {
+                    field: 'careerAmbition',
+                    label: 'Your career ambition level?',
+                    type: 'select',
+                    options: ['low', 'moderate', 'high', 'workaholic']
+                },
+                {
+                    field: 'travelFrequency',
+                    label: 'How often do you travel?',
+                    type: 'select',
+                    options: ['never', 'rarely', 'few_times_year', 'monthly', 'frequently']
+                }
+            ]
+        },
+        {
+            title: "Interests & Entertainment",
+            fields: [
+                {
+                    field: 'interests',
+                    label: 'Select your interests (choose multiple)',
+                    type: 'multi-select',
+                    options: INTERESTS_OPTIONS
+                },
+                {
+                    field: 'musicGenres',
+                    label: 'Favorite music genres',
+                    type: 'multi-select',
+                    options: ['Pop', 'Rock', 'Hip-Hop', 'Electronic', 'Classical', 'Jazz', 'Country', 'R&B', 'Indie', 'Alternative']
+                },
+                {
+                    field: 'sportsInterest',
+                    label: 'Sports interest?',
+                    type: 'select',
+                    options: ['none', 'watching', 'playing', 'both']
+                },
+                {
+                    field: 'petPreference',
+                    label: 'How do you feel about pets?',
+                    type: 'select',
+                    options: ['love_all', 'dogs', 'cats', 'other', 'none']
+                }
+            ]
+        }
+    ];
 
-            <div className="space-y-6">
-                {/* Relationship Goals */}
-                <div>
+    const currentSectionData = questionnaireSections[currentSection];
+    const isLastSection = currentSection === questionnaireSections.length - 1;
+
+    const renderField = (fieldData) => {
+        const { field, label, type, options, required } = fieldData;
+        const value = formData.questionnaire[field];
+
+        if (type === 'multi-select') {
+            return (
+                <div key={field}>
                     <label className={`block font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                        What are you looking for? *
+                        {label} {required && '*'}
                     </label>
-                    <div className="grid grid-cols-2 gap-3">
-                        {['casual', 'serious', 'marriage', 'unsure'].map((goal) => (
-                            <button
-                                key={goal}
-                                onClick={() => updateQuestionnaire('relationshipGoals', goal)}
-                                className={`p-3 rounded-xl border transition-all duration-300 ${
-                                    formData.questionnaire.relationshipGoals === goal
-                                        ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-300'
-                                        : (isDark 
-                                            ? 'border-gray-600 text-gray-300 hover:border-gray-500' 
-                                            : 'border-gray-300 text-gray-700 hover:border-gray-400')
-                                }`}
-                            >
-                                {goal.charAt(0).toUpperCase() + goal.slice(1)}
-                            </button>
-                        ))}
+                    <div className="grid grid-cols-2 gap-2">
+                        {options.map((option) => {
+                            const isSelected = Array.isArray(value) && value.includes(option);
+                            return (
+                                <button
+                                    key={option}
+                                    onClick={() => {
+                                        if (field === 'interests') {
+                                            toggleInterest(option);
+                                        } else {
+                                            const currentValues = value || [];
+                                            const newValues = isSelected
+                                                ? currentValues.filter(v => v !== option)
+                                                : [...currentValues, option];
+                                            updateQuestionnaire(field, newValues);
+                                        }
+                                    }}
+                                    className={`p-2 text-sm rounded-lg border transition-all duration-300 ${
+                                        isSelected
+                                            ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-300'
+                                            : (isDark 
+                                                ? 'border-gray-600 text-gray-300 hover:border-gray-500' 
+                                                : 'border-gray-300 text-gray-700 hover:border-gray-400')
+                                    }`}
+                                >
+                                    {option}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
+            );
+        }
 
-                {/* Drinking Habits */}
+        return (
+            <div key={field}>
+                <label className={`block font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                    {label} {required && '*'}
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                    {options.map((option) => (
+                        <button
+                            key={option}
+                            onClick={() => updateQuestionnaire(field, option)}
+                            className={`p-3 rounded-xl border transition-all duration-300 ${
+                                value === option
+                                    ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-300'
+                                    : (isDark 
+                                        ? 'border-gray-600 text-gray-300 hover:border-gray-500' 
+                                        : 'border-gray-300 text-gray-700 hover:border-gray-400')
+                            }`}
+                        >
+                            {option.charAt(0).toUpperCase() + option.slice(1).replace(/_/g, ' ')}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-6">
                 <div>
-                    <label className={`block font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                        Do you drink? *
+                    <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                        {currentSectionData.title}
+                    </h2>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Section {currentSection + 1} of {questionnaireSections.length}
+                    </p>
+                </div>
+                <div className="flex space-x-2">
+                    {questionnaireSections.map((_, index) => (
+                        <div
+                            key={index}
+                            className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                                index === currentSection
+                                    ? 'bg-pink-500'
+                                    : index < currentSection
+                                    ? 'bg-green-500'
+                                    : (isDark ? 'bg-gray-600' : 'bg-gray-300')
+                            }`}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            <div className="space-y-6 mb-8">
+                {currentSectionData.fields.map(renderField)}
+            </div>
+
+            {/* Section Navigation */}
+            <div className="flex justify-between">
+                {currentSection > 0 ? (
+                    <button
+                        onClick={() => setCurrentSection(prev => prev - 1)}
+                        className={`px-6 py-3 rounded-xl border transition-all duration-300 ${
+                            isDark 
+                                ? 'border-gray-600 text-gray-300 hover:border-gray-500' 
+                                : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                        }`}
+                    >
+                        Previous Section
+                    </button>
+                ) : <div />}
+
+                {!isLastSection && (
+                    <button
+                        onClick={() => setCurrentSection(prev => prev + 1)}
+                        className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-semibold hover:from-pink-600 hover:to-purple-600 transition-all duration-300"
+                    >
+                        Next Section
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                         {['never', 'rarely', 'socially', 'regularly'].map((habit) => (
