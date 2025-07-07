@@ -550,6 +550,11 @@ userSchema.methods.calculateDistance = function(coords1, coords2) {
     return R * c;
 };
 
+// Password comparison method
+userSchema.methods.matchPassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
+
 // Increment login attempts
 userSchema.methods.incLoginAttempts = function() {
     // If we have a previous lock that has expired, restart at 1
