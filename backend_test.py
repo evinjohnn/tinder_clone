@@ -41,20 +41,17 @@ class DatingAppAPITester:
         return success
 
     def make_request(self, method, endpoint, data=None, expected_status=200):
-        """Make HTTP request with proper headers"""
+        """Make HTTP request with proper headers and cookie handling"""
         url = f"{self.base_url}/api/{endpoint}"
         headers = {'Content-Type': 'application/json'}
-        
-        if self.token:
-            headers['Authorization'] = f'Bearer {self.token}'
 
         try:
             if method == 'GET':
-                response = requests.get(url, headers=headers, timeout=10)
+                response = self.session.get(url, headers=headers, timeout=10)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=headers, timeout=10)
+                response = self.session.post(url, json=data, headers=headers, timeout=10)
             elif method == 'DELETE':
-                response = requests.delete(url, headers=headers, timeout=10)
+                response = self.session.delete(url, headers=headers, timeout=10)
             else:
                 return False, {"error": f"Unsupported method: {method}"}
 
