@@ -75,6 +75,8 @@ app.use("/api/matches", matchRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/premium", premiumRoutes);
+app.use("/api/prompts", promptRoutes);
+app.use("/api/filters", advancedFilterRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
