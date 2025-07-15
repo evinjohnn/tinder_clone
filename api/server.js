@@ -75,6 +75,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/matches", matchRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/ai-enhanced", enhancedAiRoutes);
 app.use("/api/premium", premiumRoutes);
 app.use("/api/prompts", promptRoutes);
 app.use("/api/filters", advancedFilterRoutes);
