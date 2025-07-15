@@ -13,7 +13,7 @@ import time
 class DatingAppAPITester:
     def __init__(self, base_url="http://localhost:5000"):
         self.base_url = base_url
-        self.token = None
+        self.session = requests.Session()  # Use session to handle cookies
         self.user_id = None
         self.tests_run = 0
         self.tests_passed = 0
