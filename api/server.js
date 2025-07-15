@@ -15,6 +15,8 @@ import matchRoutes from "./routes/matchRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import premiumRoutes from "./routes/premiumRoutes.js";
+import promptRoutes from "./routes/promptRoutes.js";
+import advancedFilterRoutes from "./routes/advancedFilterRoutes.js";
 
 // Config and utilities
 import { connectDB } from "./config/db.js";
