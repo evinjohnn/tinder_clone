@@ -83,10 +83,11 @@ class DatingAppAPITester:
             "name": "Test User",
             "age": 25,
             "gender": "male",
+            "genderPreference": "female",
             "location": "New York"
         }
         
-        success, data = self.make_request('POST', 'auth/register', test_user, 201)
+        success, data = self.make_request('POST', 'auth/signup', test_user, 201)
         if success and 'token' in data:
             self.token = data['token']
             self.user_id = data.get('user', {}).get('id')
