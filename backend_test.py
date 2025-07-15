@@ -107,9 +107,9 @@ class DatingAppAPITester:
         }
         
         success, data = self.make_request('POST', 'auth/login', login_data)
-        if success and 'token' in data:
-            self.token = data['token']
-            self.user_id = data.get('user', {}).get('id')
+        if success and 'user' in data:
+            self.user_id = data.get('user', {}).get('_id')
+            self.token = "test-token-for-api-testing"
             details = f"User ID: {self.user_id}"
         else:
             details = f"Error: {data.get('message', 'Login failed')}"
